@@ -16,7 +16,7 @@ import path from "node:path";
 export async function triggerBuild(client, args) {
 	const { jobFullName, parameters = {} } = args;
 	if (!jobFullName) return failure("triggerBuild", "jobFullName is required");
-	const jobPath = encodeURIComponent(jobFullName).replace(/%2F/g, "/");
+	const jobPath = encodeJobPath(jobFullName);
 	const allowAbsolute = process.env.ALLOW_ABSOLUTE_FILE_PARAMS === "1";
 
 	try {
@@ -115,7 +115,7 @@ export async function scheduleBuild(client, args) {
 		0,
 		Math.floor((scheduledDate - now) / 1000)
 	);
-	const jobPath = encodeURIComponent(jobFullName).replace(/%2F/g, "/");
+	const jobPath = encodeJobPath(jobFullName);
 
 	const form = new FormData();
 	for (const [key, value] of Object.entries(parameters)) {
