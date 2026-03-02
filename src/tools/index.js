@@ -8,6 +8,7 @@ import {
 	stopBuild,
 	scheduleBuild,
 	updateBuild,
+	getBuildLog,
 } from "./build-management.js";
 import { getJob, getBuild, getJobs } from "./job-info.js";
 import { whoAmI, getStatus } from "./system-info.js";
@@ -321,6 +322,39 @@ export const toolRegistry = {
 			required: ["queueId"],
 		},
 		handler: getQueueItem,
+	},
+
+	// Log Management Tools
+	getBuildLog: {
+		name: "getBuildLog",
+		description:
+			"Get console log for a specific build or the last build. Supports optional line limiting from the start or tail of the log.",
+		inputSchema: {
+			type: "object",
+			properties: {
+				jobFullName: {
+					type: "string",
+					description: "Full path of the Jenkins job",
+				},
+				buildNumber: {
+					type: "integer",
+					description:
+						"Build number (optional, defaults to last build)",
+				},
+				maxLines: {
+					type: "integer",
+					description:
+						"Maximum number of lines to return. If omitted, returns full log.",
+				},
+				tail: {
+					type: "boolean",
+					description:
+						"If true, returns the last maxLines lines instead of the first. Default: false.",
+				},
+			},
+			required: ["jobFullName"],
+		},
+		handler: getBuildLog,
 	},
 };
 
