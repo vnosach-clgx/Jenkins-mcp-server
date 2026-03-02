@@ -335,3 +335,67 @@ export async function stopBuild(client, args) {
 		return formatError(error, "stopBuild");
 	}
 }
+
+/**
+ * Get console log for a Jenkins build.
+ * Uses /consoleText for full output with optional line limiting.
+ */
+export async function getBuildLog(client, args) {
+	const {
+		jobFullName,
+		buildNumber = null,
+		maxLines = null,
+		tail = false,
+	} = args;
+	if (!jobFullName) return failure("getBuildLog", "jobFullName is required");
+
+	const jobPath = encodeJobPath(jobFullName);
+	const buildPath = buildNumber || "lastBuild";
+
+	try {
+		const response = await client.get(
+			`${client.baseUrl}/job/${jobPath}/${buildPath}/consoleText`,
+			{ headers: { Accept: "text/plain" }, responseType: "text" }
+		);
+
+		if (response.status === 404) {
+			return failure(
+				"getBuildLog",
+				`Build not found: ${jobFullName}#${buildPath}`,
+				{ statusCode: 404 }
+			);
+		}
+		if (response.status !== 200) {
+			return failure(
+				"getBuildLog",
+				`Unexpected status ${response.status}`,
+				{ statusCode: response.status }
+			);
+		}
+
+		const rawLog =
+			typeof response.data === "string"
+				? response.data
+				: String(response.data ?? "");
+		const lines = rawLog.split("\n");
+		const totalLines = lines.length;
+
+		const returnedLines =
+			maxLines && maxLines > 0
+				? tail
+					? lines.slice(-maxLines)
+					: lines.slice(0, maxLines)
+				: lines;
+
+		return success("getBuildLog", {
+			jobFullName,
+			buildNumber: buildPath,
+			totalLines,
+			returnedLines: returnedLines.length,
+			truncated: maxLines ? totalLines > maxLines : false,
+			log: returnedLines.join("\n"),
+		});
+	} catch (error) {
+		return formatError(error, "getBuildLog");
+	}
+}
